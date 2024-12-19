@@ -1,11 +1,10 @@
 pipeline {
     agent any
-
-    environment{
+    environment {
         NETLIFY_SITE_ID = 'c9159d74-23d5-4ebe-a72a-a1719ce00eff'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
-    
+
     triggers {
         cron('* * * * *')
     }
@@ -29,9 +28,9 @@ pipeline {
                 '''
             }
         }
-        
-        stage('tests'){
-            parallel{
+
+        stage('tests') {
+            parallel {
                 stage('Unite Test') {
                     agent {
                         docker {
@@ -41,14 +40,11 @@ pipeline {
                     }
 
                     steps {
-                        sh '''
-                            #test -f build/index.html
-                            npm test
-                        '''
+                        sh 'npm test'
                     }
                     post {
                         always {
-                            junit 'jest-results/junit.xml'                       
+                            junit 'jest-results/junit.xml'
                         }
                     }
                 }
@@ -59,7 +55,6 @@ pipeline {
                             reuseNode true
                         }
                     }
-
                     steps {
                         sh '''
                             npm install serve
@@ -68,15 +63,24 @@ pipeline {
                             npx playwright test --reporter=html
                         '''
                     }
-                        post {
-                            always {
-                                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
-                            }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false, 
+                                alwaysLinkToLastBuild: false, 
+                                keepAll: false, 
+                                reportDir: 'playwright-report', 
+                                reportFiles: 'index.html', 
+                                reportName: 'Playwright HTML Report', 
+                                reportTitles: '', 
+                                useWrapperFileDirectly: true
+                            ])
                         }
+                    }
                 }
             }
+        }
 
-            }
         stage('Deploy staging') {
             agent {
                 docker {
@@ -88,10 +92,18 @@ pipeline {
                 sh '''
                     npm install netlify-cli 
                     node_modules/.bin/netlify --version
-                    echo Deploying to staging .Site ID : $NETLIFY_SITE_ID
+                    echo Deploying to staging. Site ID : $NETLIFY_SITE_ID
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build
                 '''
+            }
+        }
+
+        // Nouvelle étape Approbation
+        stage('Approbation') {
+            steps {
+                // Demande d'approbation manuelle
+               input message: 'Souhaitez-vous déployer en production ?', ok: 'Oui, je suis sûr !'
             }
         }
 
@@ -102,36 +114,50 @@ pipeline {
                     reuseNode true
                 }
             }
-            steps {
-                sh '''
-                    npm install netlify-cli 
-                    node_modules/.bin/netlify --version
-                    echo Deploying to production .Site ID : $NETLIFY_SITE_ID
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
-                '''
-            }
-        }
-        stage('E2E') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                    reuseNode true
-                    }
-            }
             environment {
                 CI_ENVIRONMENT_URL = 'c9159d74-23d5-4ebe-a72a-a1719ce00eff'
             }
             steps {
                 sh '''
-                    npx playwright test --reporter=html
-                    '''
+                    npm install netlify-cli 
+                    node_modules/.bin/netlify --version
+                    echo Deploying to production. Site ID : $NETLIFY_SITE_ID
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --prod
+                '''
+            }
+            post {
+                always {
+                    // Tests E2E sur l'environnement de production
+                    // (Optionnel, vous pouvez conserver l'étape E2E Production séparée si souhaité)
                 }
-                post {
-                    always {
-                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright E2E', reportTitles: '', useWrapperFileDirectly: true])
-                    }
+            }
+        }
+
+        stage('E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
                 }
+            }
+            steps {
+                sh 'npx playwright test --reporter=html'
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: false, 
+                        alwaysLinkToLastBuild: false, 
+                        keepAll: false, 
+                        reportDir: 'playwright-report', 
+                        reportFiles: 'index.html', 
+                        reportName: 'Playwright E2E', 
+                        reportTitles: '', 
+                        useWrapperFileDirectly: true
+                    ])
+                }
+            }
         }
     }
 }
