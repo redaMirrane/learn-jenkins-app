@@ -126,12 +126,6 @@ pipeline {
                     node_modules/.bin/netlify deploy --dir=build --prod
                 '''
             }
-            post {
-                always {
-                    // Tests E2E sur l'environnement de production
-                    // (Optionnel, vous pouvez conserver l'étape E2E Production séparée si souhaité)
-                }
-            }
         }
 
         stage('E2E') {
