@@ -5,9 +5,9 @@ pipeline {
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
-    triggers {
-        cron('* * * * *')
-    }
+    //triggers {
+      //  cron('* * * * *')
+    //}
 
     stages {
         stage('Build') {
