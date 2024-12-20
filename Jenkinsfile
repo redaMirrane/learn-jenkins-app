@@ -115,7 +115,7 @@ pipeline {
                 }
             }
             environment {
-                CI_ENVIRONMENT_URL = 'c9159d74-23d5-4ebe-a72a-a1719ce00eff'
+                CI_ENVIRONMENT_URL = 'https://dashing-sunshine-b1ef17.netlify.app'
             }
             steps {
                 sh '''
