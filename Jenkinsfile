@@ -104,6 +104,7 @@ pipeline {
             steps {
                 // Demande d'approbation manuelle
                input message: 'Souhaitez-vous déployer en production ?', ok: 'Oui, je suis sûr !'
+               timeout: 900
             }
         }
 
