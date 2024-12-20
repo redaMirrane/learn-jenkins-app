@@ -135,6 +135,9 @@ pipeline {
                     reuseNode true
                 }
             }
+            environment {
+                CI_ENVIRONMENT_URL = 'https://dashing-sunshine-b1ef17.netlify.app'
+            }
             steps {
                 sh 'npx playwright test --reporter=html'
             }
